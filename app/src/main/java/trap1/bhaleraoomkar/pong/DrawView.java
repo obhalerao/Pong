@@ -19,21 +19,30 @@ public class DrawView extends View {
     private int radius = INF;
     public boolean incr_four_pad = false;
     public boolean decr_four_pad = false;
-    public int score = 0;
-
-    private float four_pad = 0.5f;
-
     private float pad_length = 0.2f;
     private float pad_width = 0.05f;
-    private float four_pad_rate = 0.0075f;
+    public float four_pad = 0.5f;
 
-    Rect pad1;
-    Rect pad2;
-    Rect pad3;
-    Rect pad4;
+    public int score = 0;
+
+
+
+    Paddle pad1;
+    Paddle pad2;
+    Paddle pad3;
+    Paddle pad4;
 
     public DrawView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int right, int top, int bottom){
+        float l, t, r, b;
+        if(type == 1){ l = (fp - pad_length / 2) * width; t = 0.0f; r = (fp + pad_length / 2) * width; b = pad_width * width;}
+        else if(type == 2){ l = 0.0f; t = (fp-pad_length*((float)width/(float)height)/2)*height; r = pad_width*width; b = (fp+pad_length*((float)width/(float)height)/2)*height;}
+        else if(type == 3){ l = (1-(fp+pad_length/2))*width; t = (float)height-pad_width*width; r = (1-(fp-pad_length/2))*width; b = (float)height;}
+        else if(type == 4){ l = (float)width-pad_width*width; t = (1-(fp+pad_length*((float)width/(float)height)/2))*height; r = (float)width; b =(1-(fp-pad_length*((float)width/(float)height)/2))*height;}
     }
 
     @Override
@@ -43,9 +52,9 @@ public class DrawView extends View {
             y = (int)(getHeight()*.5f);
             radius = (int)(getWidth()*.067f);
         }
+        y+=dY;//increment y position
+        x+=dX;
         super.onDraw(canvas);
-
-
 
 
         paint.setColor(Color.GRAY);//set paint to gray
@@ -76,10 +85,6 @@ public class DrawView extends View {
                 (1-(four_pad+pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(),
                 (float)getWidth(),
                 (1-(four_pad-pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), paint);
-        y+=dY;//increment y position
-        x+=dX;
-
-        System.out.println();
 
 
         if(checkIntersection(x, y, radius, (four_pad-pad_length/2)*getWidth(), 0.0f, (four_pad+pad_length/2)*getWidth(), pad_width*getWidth())){
