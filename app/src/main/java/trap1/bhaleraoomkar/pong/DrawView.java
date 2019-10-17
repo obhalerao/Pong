@@ -5,15 +5,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import static android.graphics.RectF.intersects;
+
 public class DrawView extends View {
     private final int INF = 1000000007;
     private Paint paint=new Paint();
-    private int ball_rate = (int)Math.random()*4+3;
+    private int ball_rate = 10;
     private int x = INF, dX=ball_rate;//set intial x position and vertical speed
     private int y = INF, dY=ball_rate;//set initial y position and vertical speed
     private int radius = INF;
@@ -21,7 +24,8 @@ public class DrawView extends View {
     public boolean decr_four_pad = false;
     private float pad_length = 0.2f;
     private float pad_width = 0.05f;
-    public float four_pad = 0.5f;
+    public float fp = 0.5f;
+    private float four_pad_rate = 0.0075f;
 
     public int score = 0;
 
@@ -31,6 +35,7 @@ public class DrawView extends View {
     Paddle pad2;
     Paddle pad3;
     Paddle pad4;
+    Ball ball;
 
     public DrawView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -38,22 +43,18 @@ public class DrawView extends View {
 
     @Override
     protected void onLayout(boolean changed, int left, int right, int top, int bottom){
-        float l, t, r, b;
-        if(type == 1){ l = (fp - pad_length / 2) * width; t = 0.0f; r = (fp + pad_length / 2) * width; b = pad_width * width;}
-        else if(type == 2){ l = 0.0f; t = (fp-pad_length*((float)width/(float)height)/2)*height; r = pad_width*width; b = (fp+pad_length*((float)width/(float)height)/2)*height;}
-        else if(type == 3){ l = (1-(fp+pad_length/2))*width; t = (float)height-pad_width*width; r = (1-(fp-pad_length/2))*width; b = (float)height;}
-        else if(type == 4){ l = (float)width-pad_width*width; t = (1-(fp+pad_length*((float)width/(float)height)/2))*height; r = (float)width; b =(1-(fp-pad_length*((float)width/(float)height)/2))*height;}
+        x = (int)(getWidth()*.5f);
+        y = (int)(getHeight()*.5f);
+        radius = (int)(getWidth()*.033f);
+        pad1 = new Paddle((fp - pad_length / 2) * getWidth(), 0.0f, (fp + pad_length / 2) * getWidth(),pad_width * getWidth(), 1, four_pad_rate, getWidth(), getHeight());
+        pad2 = new Paddle( 0.0f, (fp-pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), pad_width*getWidth(),(fp+pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), 2, four_pad_rate, getWidth(), getHeight());
+        pad3 = new Paddle((1-(fp+pad_length/2))*getWidth(),(float)getHeight()-pad_width*getWidth(), (1-(fp-pad_length/2))*getWidth(), (float)getHeight(), 3, four_pad_rate, getWidth(), getHeight());
+        pad4 = new Paddle((float)getWidth()-pad_width*getWidth(), (1-(fp+pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), (float)getWidth(), (1-(fp-pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), 4, four_pad_rate, getWidth(), getHeight());
+        ball  = new Ball(x, y, radius, ball_rate);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if(x == INF || y == INF || radius == INF){
-            x = (int)(getWidth()*.5f);
-            y = (int)(getHeight()*.5f);
-            radius = (int)(getWidth()*.067f);
-        }
-        y+=dY;//increment y position
-        x+=dX;
         super.onDraw(canvas);
 
 
@@ -65,80 +66,42 @@ public class DrawView extends View {
         paint.setColor(Color.BLACK);
         canvas.drawText(""+score, getWidth()*.5f, getHeight()*.5f, paint);
 
-        paint.setColor(Color.RED);//set paint to red
-        //draw red circle
-        canvas.drawCircle(x,y,radius,paint);
-        paint.setColor(Color.BLUE);
-        canvas.drawRect((four_pad-pad_length/2)*getWidth(),
-                0.0f,
-                (four_pad+pad_length/2)*getWidth(),
-                pad_width*getWidth(), paint);
-        canvas.drawRect(0.0f,
-                (four_pad-pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(),
-                pad_width*getWidth(),
-                (four_pad+pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), paint);
-        canvas.drawRect((1-(four_pad+pad_length/2))*getWidth(),
-                (float)getHeight()-pad_width*getWidth(),
-                (1-(four_pad-pad_length/2))*getWidth(),
-                (float)getHeight(), paint);
-        canvas.drawRect((float)getWidth()-pad_width*getWidth(),
-                (1-(four_pad+pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(),
-                (float)getWidth(),
-                (1-(four_pad-pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), paint);
+        pad1.draw(canvas);
+        pad2.draw(canvas);
+        pad3.draw(canvas);
+        pad4.draw(canvas);
+        ball.draw(canvas);
 
-
-        if(checkIntersection(x, y, radius, (four_pad-pad_length/2)*getWidth(), 0.0f, (four_pad+pad_length/2)*getWidth(), pad_width*getWidth())){
-            dY=ball_rate;
-            score++;
+        if((intersects(pad1, ball) || intersects(pad3, ball)) && !ball.isIntersecting){
+            score+=1;
+            ball.dy*=-1;
         }
-
-
-        if(checkIntersection(x, y, radius, (1-(four_pad+pad_length/2))*getWidth(), (float)getHeight()-pad_width*getWidth(),(1-(four_pad-pad_length/2))*getWidth(), (float)getHeight())){
-            dY=-1*ball_rate;
-            score++;
+        if((intersects(pad2, ball) || intersects(pad4, ball)) && !ball.isIntersecting){
+            score+=1;
+            ball.dx*=-1;
         }
-
-        if(checkIntersection(x, y, radius, 0.0f, (four_pad-pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), pad_width*getWidth(), (four_pad+pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight())){
-            dX=ball_rate;
-            score++;
-        }
-
-        if(checkIntersection(x, y, radius, (float)getWidth()-pad_width*getWidth(), (1-(four_pad+pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), (float)getWidth(), (1-(four_pad-pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight())){
-            dX=-1*ball_rate;
-            score++;
-        }
-
 
 
         if(incr_four_pad){
-            four_pad+=four_pad_rate;
-            if(four_pad > (1.0-pad_length/2)+0.01f) four_pad = (1-pad_length/2)+0.01f;
+            if(fp <= 1.0-pad_length/2){
+                fp+=four_pad_rate;
+                pad1.change(true);
+                pad2.change(true);
+                pad3.change(true);
+                pad4.change(true);
+            }
         }
         else if(decr_four_pad){
-            four_pad-=four_pad_rate;
-            if(four_pad < (pad_length/2)-0.01f) four_pad = (pad_length/2)-0.01f;
+            if(fp >= (pad_length/2)-0.01f) {
+                fp -= four_pad_rate;
+                pad1.change(false);
+                pad2.change(false);
+                pad3.change(false);
+                pad4.change(false);
+            }
         }
+        ball.move();
 
         invalidate();  //redraws screen, invokes onDraw()
-    }
-
-    private boolean checkIntersection(float p1, float p2, float r, float x1, float y1, float x2, float y2){
-
-        float width = Math.abs(x2-x1);
-        float height = Math.abs(y2-y1);
-
-        float circleDistx = Math.abs(p1-x1);
-        float circleDisty = Math.abs(p2-y1);
-
-        if (circleDistx > (width/2 + r)) { return false; }
-        if (circleDisty > (height/2 + r)) { return false; }
-
-        if (circleDistx <= (width/2)) { return true; }
-        if (circleDisty <= (height/2)) { return true; }
-
-        float cornerDistance_sq = (float)(Math.pow((circleDistx - width/2), 2.0) +
-                Math.pow((circleDisty - height/2), 2));
-
-        return (cornerDistance_sq < r*r);
     }
 }
