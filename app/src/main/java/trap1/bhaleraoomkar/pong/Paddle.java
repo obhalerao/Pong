@@ -44,4 +44,6 @@ public class Paddle extends RectF {
         canvas.drawRect(this, paint);
     }
 
+
+
 }

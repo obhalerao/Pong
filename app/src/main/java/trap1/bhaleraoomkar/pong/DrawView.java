@@ -16,7 +16,7 @@ import static android.graphics.RectF.intersects;
 public class DrawView extends View {
     private final int INF = 1000000007;
     private Paint paint=new Paint();
-    private int ball_rate = 10;
+    private int ball_rate = 5;
     private int x = INF, dX=ball_rate;//set intial x position and vertical speed
     private int y = INF, dY=ball_rate;//set initial y position and vertical speed
     private int radius = INF;
@@ -26,6 +26,7 @@ public class DrawView extends View {
     private float pad_width = 0.05f;
     public float fp = 0.5f;
     private float four_pad_rate = 0.0075f;
+    private boolean gameOver = false;
 
     public int score = 0;
 
@@ -56,6 +57,16 @@ public class DrawView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if(gameOver){
+            paint.setColor(Color.GRAY);//set paint to gray
+            canvas.drawRect(getLeft(),0,getRight(),getBottom(),paint);//paint background gray
+            paint.setTextSize(144);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setColor(Color.BLACK);
+            canvas.drawText("GAME OVER!", getWidth()*.5f, getHeight()*.25f, paint);
+            canvas.drawText("Score: "+score, getWidth()*.5f, getHeight()*.5f, paint);
+            return;
+        }
 
 
         paint.setColor(Color.GRAY);//set paint to gray
@@ -72,18 +83,33 @@ public class DrawView extends View {
         pad4.draw(canvas);
         ball.draw(canvas);
 
-        if((intersects(pad1, ball) || intersects(pad3, ball)) && !ball.isIntersecting){
+        if(intersects(pad1, ball)){
             score+=1;
             ball.dy*=-1;
+            ball.offsetTo(ball.left, getWidth()*pad_width);
         }
-        if((intersects(pad2, ball) || intersects(pad4, ball)) && !ball.isIntersecting){
+
+        if(intersects(pad2, ball)){
             score+=1;
             ball.dx*=-1;
+            ball.offsetTo(getWidth()*pad_width, ball.top);
+        }
+
+        if(intersects(pad3, ball)){
+            score+=1;
+            ball.dy*=-1;
+            ball.offsetTo(ball.left, getHeight()-(getWidth()*pad_width)-(2*radius));
+        }
+
+        if(intersects(pad4, ball)){
+            score+=1;
+            ball.dx*=-1;
+            ball.offsetTo(getWidth()*(1-pad_width)-(2*radius), ball.top);
         }
 
 
         if(incr_four_pad){
-            if(fp <= 1.0-pad_length/2){
+            if(fp <= (1.0-pad_length/2)+0.03f){
                 fp+=four_pad_rate;
                 pad1.change(true);
                 pad2.change(true);
@@ -92,7 +118,7 @@ public class DrawView extends View {
             }
         }
         else if(decr_four_pad){
-            if(fp >= (pad_length/2)-0.01f) {
+            if(fp >= (pad_length/2)-0.03f) {
                 fp -= four_pad_rate;
                 pad1.change(false);
                 pad2.change(false);
@@ -101,6 +127,8 @@ public class DrawView extends View {
             }
         }
         ball.move();
+
+        if(ball.outOfBounds(getWidth(), getHeight())) gameOver = true;
 
         invalidate();  //redraws screen, invokes onDraw()
     }
