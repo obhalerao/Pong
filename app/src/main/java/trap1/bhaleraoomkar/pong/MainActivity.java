@@ -9,35 +9,48 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button leftButton;
-    Button rightButton;
     DrawView canvas;
 
 
-
-    View.OnTouchListener left = new View.OnTouchListener() {
+    View.OnClickListener reset = new View.OnClickListener() {
         @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if(event.getAction() == MotionEvent.ACTION_DOWN){
-                canvas.incr_four_pad = true;
-                return true;
-            }else if(event.getAction() == MotionEvent.ACTION_UP){
-                canvas.incr_four_pad = false;
-                return true;
-            }
-            return false;
+        public void onClick(View v) {
+            canvas.setAllParams();
+            canvas.gameOver = false;
+            canvas.setOnClickListener(null);
+            canvas.setOnTouchListener(respond);
+
         }
     };
 
-    View.OnTouchListener right = new View.OnTouchListener() {
+    View.OnTouchListener respond = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if(event.getAction() == MotionEvent.ACTION_DOWN){
-                canvas.decr_four_pad = true;
-                return true;
-            }else if(event.getAction() == MotionEvent.ACTION_UP){
-                canvas.decr_four_pad = false;
-                return true;
+            if(canvas.gameOver){
+                canvas.setOnTouchListener(null);
+                canvas.setOnClickListener(reset);
+                return false;
+            }
+            if(event.getX() < canvas.getWidth()/2){
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    canvas.incr_four_pad = true;
+                    canvas.decr_four_pad = false;
+                    return true;
+                }else if(event.getAction() == MotionEvent.ACTION_UP){
+                    canvas.incr_four_pad = false;
+                    canvas.decr_four_pad = false;
+                    return true;
+                }
+            }else {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    canvas.decr_four_pad = true;
+                    canvas.incr_four_pad = false;
+                    return true;
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    canvas.decr_four_pad = false;
+                    canvas.incr_four_pad = false;
+                    return true;
+                }
             }
             return false;
         }
@@ -47,11 +60,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        leftButton = findViewById(R.id.leftButton);
-        rightButton = findViewById(R.id.rightButton);
+
         canvas = findViewById(R.id.drawView);
-        leftButton.setOnTouchListener(left);
-        rightButton.setOnTouchListener(right);
+        canvas.setOnTouchListener(respond);
     }
 
 

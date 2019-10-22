@@ -16,17 +16,17 @@ import static android.graphics.RectF.intersects;
 public class DrawView extends View {
     private final int INF = 1000000007;
     private Paint paint=new Paint();
-    private int ball_rate = 5;
-    private int x = INF, dX=ball_rate;//set intial x position and vertical speed
-    private int y = INF, dY=ball_rate;//set initial y position and vertical speed
+    private float ball_rate = 12.5f;
+    private int x = INF;
+    private int y = INF;
     private int radius = INF;
     public boolean incr_four_pad = false;
     public boolean decr_four_pad = false;
     private float pad_length = 0.2f;
     private float pad_width = 0.05f;
     public float fp = 0.5f;
-    private float four_pad_rate = 0.0075f;
-    private boolean gameOver = false;
+    private float four_pad_rate = 0.0125f;
+    public boolean gameOver = false;
 
     public int score = 0;
 
@@ -44,6 +44,14 @@ public class DrawView extends View {
 
     @Override
     protected void onLayout(boolean changed, int left, int right, int top, int bottom){
+        setAllParams();
+    }
+
+    public void setAllParams(){
+        score = 0;
+        incr_four_pad = false;
+        decr_four_pad = false;
+        fp = .5f;
         x = (int)(getWidth()*.5f);
         y = (int)(getHeight()*.5f);
         radius = (int)(getWidth()*.033f);
@@ -65,71 +73,76 @@ public class DrawView extends View {
             paint.setColor(Color.BLACK);
             canvas.drawText("GAME OVER!", getWidth()*.5f, getHeight()*.25f, paint);
             canvas.drawText("Score: "+score, getWidth()*.5f, getHeight()*.5f, paint);
-            return;
-        }
+            paint.setTextSize(108);
+            canvas.drawText("Click anywhere to reset.", getWidth()*.5f, getHeight()*.75f, paint);
+
+        }else {
 
 
-        paint.setColor(Color.GRAY);//set paint to gray
-        canvas.drawRect(getLeft(),0,getRight(),getBottom(),paint);//paint background gray
+            paint.setColor(Color.GRAY);//set paint to gray
+            canvas.drawRect(getLeft(), 0, getRight(), getBottom(), paint);//paint background gray
 
-        paint.setTextSize(288);
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(Color.BLACK);
-        canvas.drawText(""+score, getWidth()*.5f, getHeight()*.5f, paint);
+            paint.setTextSize(288);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setColor(Color.BLACK);
+            canvas.drawText("" + score, getWidth() * .5f, getHeight() * .5f, paint);
 
-        pad1.draw(canvas);
-        pad2.draw(canvas);
-        pad3.draw(canvas);
-        pad4.draw(canvas);
-        ball.draw(canvas);
+            pad1.draw(canvas);
+            pad2.draw(canvas);
+            pad3.draw(canvas);
+            pad4.draw(canvas);
+            ball.draw(canvas);
 
-        if(intersects(pad1, ball)){
-            score+=1;
-            ball.dy*=-1;
-            ball.offsetTo(ball.left, getWidth()*pad_width);
-        }
-
-        if(intersects(pad2, ball)){
-            score+=1;
-            ball.dx*=-1;
-            ball.offsetTo(getWidth()*pad_width, ball.top);
-        }
-
-        if(intersects(pad3, ball)){
-            score+=1;
-            ball.dy*=-1;
-            ball.offsetTo(ball.left, getHeight()-(getWidth()*pad_width)-(2*radius));
-        }
-
-        if(intersects(pad4, ball)){
-            score+=1;
-            ball.dx*=-1;
-            ball.offsetTo(getWidth()*(1-pad_width)-(2*radius), ball.top);
-        }
-
-
-        if(incr_four_pad){
-            if(fp <= (1.0-pad_length/2)+0.03f){
-                fp+=four_pad_rate;
-                pad1.change(true);
-                pad2.change(true);
-                pad3.change(true);
-                pad4.change(true);
+            if (intersects(pad1, ball)) {
+                score += 1;
+                ball.dy *= -1;
+                ball.offsetTo(ball.left, getWidth() * pad_width);
+                ball.update();
             }
-        }
-        else if(decr_four_pad){
-            if(fp >= (pad_length/2)-0.03f) {
-                fp -= four_pad_rate;
-                pad1.change(false);
-                pad2.change(false);
-                pad3.change(false);
-                pad4.change(false);
+
+            if (intersects(pad2, ball)) {
+                score += 1;
+                ball.dx *= -1;
+                ball.offsetTo(getWidth() * pad_width, ball.top);
+                ball.update();
             }
+
+            if (intersects(pad3, ball)) {
+                score += 1;
+                ball.dy *= -1;
+                ball.offsetTo(ball.left, getHeight() - (getWidth() * pad_width) - (2 * radius));
+                ball.update();
+            }
+
+            if (intersects(pad4, ball)) {
+                score += 1;
+                ball.dx *= -1;
+                ball.offsetTo(getWidth() * (1 - pad_width) - (2 * radius), ball.top);
+                ball.update();
+            }
+
+
+            if (incr_four_pad) {
+                if (fp <= (1.0 - pad_length / 2) + 0.03f) {
+                    fp += four_pad_rate;
+                    pad1.change(true);
+                    pad2.change(true);
+                    pad3.change(true);
+                    pad4.change(true);
+                }
+            } else if (decr_four_pad) {
+                if (fp >= (pad_length / 2) - 0.03f) {
+                    fp -= four_pad_rate;
+                    pad1.change(false);
+                    pad2.change(false);
+                    pad3.change(false);
+                    pad4.change(false);
+                }
+            }
+            ball.move();
+
+            if (ball.outOfBounds(getWidth(), getHeight())) gameOver = true;
         }
-        ball.move();
-
-        if(ball.outOfBounds(getWidth(), getHeight())) gameOver = true;
-
         invalidate();  //redraws screen, invokes onDraw()
     }
 }
