@@ -1,9 +1,12 @@
 package trap1.bhaleraoomkar.pong;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -27,6 +30,7 @@ public class DrawView extends View {
     public float fp = 0.5f;
     private float four_pad_rate = 0.0125f;
     public boolean gameOver = false;
+    public int framesLeft = 50;
 
     public int score = 0;
 
@@ -51,15 +55,17 @@ public class DrawView extends View {
         score = 0;
         incr_four_pad = false;
         decr_four_pad = false;
+        framesLeft = 50;
         fp = .5f;
         x = (int)(getWidth()*.5f);
         y = (int)(getHeight()*.5f);
-        radius = (int)(getWidth()*.033f);
+        radius = (int)(getWidth()*.066f);
         pad1 = new Paddle((fp - pad_length / 2) * getWidth(), 0.0f, (fp + pad_length / 2) * getWidth(),pad_width * getWidth(), 1, four_pad_rate, getWidth(), getHeight());
         pad2 = new Paddle( 0.0f, (fp-pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), pad_width*getWidth(),(fp+pad_length*((float)getWidth()/(float)getHeight())/2)*getHeight(), 2, four_pad_rate, getWidth(), getHeight());
         pad3 = new Paddle((1-(fp+pad_length/2))*getWidth(),(float)getHeight()-pad_width*getWidth(), (1-(fp-pad_length/2))*getWidth(), (float)getHeight(), 3, four_pad_rate, getWidth(), getHeight());
         pad4 = new Paddle((float)getWidth()-pad_width*getWidth(), (1-(fp+pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), (float)getWidth(), (1-(fp-pad_length*((float)getWidth()/(float)getHeight())/2))*getHeight(), 4, four_pad_rate, getWidth(), getHeight());
         ball  = new Ball(x, y, radius, ball_rate);
+        ball.bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.better_tj);
     }
 
     @Override
@@ -68,12 +74,12 @@ public class DrawView extends View {
         if(gameOver){
             paint.setColor(Color.GRAY);//set paint to gray
             canvas.drawRect(getLeft(),0,getRight(),getBottom(),paint);//paint background gray
-            paint.setTextSize(144);
+            paint.setTextSize((int)(getWidth()/10.0));
             paint.setTextAlign(Paint.Align.CENTER);
             paint.setColor(Color.BLACK);
             canvas.drawText("GAME OVER!", getWidth()*.5f, getHeight()*.25f, paint);
             canvas.drawText("Score: "+score, getWidth()*.5f, getHeight()*.5f, paint);
-            paint.setTextSize(108);
+            paint.setTextSize((int)((getWidth()/40.0)*3.0));
             canvas.drawText("Click anywhere to reset.", getWidth()*.5f, getHeight()*.75f, paint);
 
         }else {
@@ -139,7 +145,11 @@ public class DrawView extends View {
                     pad4.change(false);
                 }
             }
-            ball.move();
+            if(framesLeft == 0) {
+                ball.move();
+            }else{
+                framesLeft-=1;
+            }
 
             if (ball.outOfBounds(getWidth(), getHeight())) gameOver = true;
         }

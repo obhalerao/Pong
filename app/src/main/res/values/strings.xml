@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pong</string>
+    <string name="app_name">TJ Pong</string>
     <string name="welcome">Welcome to Pong!</string>
     <string name="left">Left</string>
     <string name="right">Right</string>
