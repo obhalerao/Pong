@@ -9,6 +9,10 @@ import android.graphics.Paint;
 import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -31,8 +35,15 @@ public class DrawView extends View {
     private float four_pad_rate = 0.0125f;
     public boolean gameOver = false;
     public int framesLeft = 50;
+    public boolean explosionPlayed = false;
 
     public int score = 0;
+
+    private static final int MAX_STREAMS=100;
+    private int soundIdExplosion;
+    private int soundIdBounce;
+    private boolean soundPoolLoaded;
+    private SoundPool soundPool;
 
 
 
@@ -44,6 +55,7 @@ public class DrawView extends View {
 
     public DrawView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        initSoundPool();
     }
 
     @Override
@@ -55,6 +67,8 @@ public class DrawView extends View {
         score = 0;
         incr_four_pad = false;
         decr_four_pad = false;
+        gameOver = false;
+        explosionPlayed = false;
         framesLeft = 50;
         fp = .5f;
         x = (int)(getWidth()*.5f);
@@ -72,6 +86,10 @@ public class DrawView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if(gameOver){
+            if(!explosionPlayed){
+                playSoundExplosion();
+                explosionPlayed = true;
+            }
             paint.setColor(Color.GRAY);//set paint to gray
             canvas.drawRect(getLeft(),0,getRight(),getBottom(),paint);//paint background gray
             paint.setTextSize((int)(getWidth()/10.0));
@@ -104,6 +122,7 @@ public class DrawView extends View {
                 ball.dy *= -1;
                 ball.offsetTo(ball.left, getWidth() * pad_width);
                 ball.update();
+                playSoundBounce();
             }
 
             if (intersects(pad2, ball)) {
@@ -111,6 +130,7 @@ public class DrawView extends View {
                 ball.dx *= -1;
                 ball.offsetTo(getWidth() * pad_width, ball.top);
                 ball.update();
+                playSoundBounce();
             }
 
             if (intersects(pad3, ball)) {
@@ -118,6 +138,7 @@ public class DrawView extends View {
                 ball.dy *= -1;
                 ball.offsetTo(ball.left, getHeight() - (getWidth() * pad_width) - (2 * radius));
                 ball.update();
+                playSoundBounce();
             }
 
             if (intersects(pad4, ball)) {
@@ -125,6 +146,7 @@ public class DrawView extends View {
                 ball.dx *= -1;
                 ball.offsetTo(getWidth() * (1 - pad_width) - (2 * radius), ball.top);
                 ball.update();
+                playSoundBounce();
             }
 
 
@@ -151,8 +173,57 @@ public class DrawView extends View {
                 framesLeft-=1;
             }
 
-            if (ball.outOfBounds(getWidth(), getHeight())) gameOver = true;
+            if (ball.outOfBounds(getWidth(), getHeight())){
+                gameOver = true;
+
+            }
         }
         invalidate();  //redraws screen, invokes onDraw()
     }
+
+    private void initSoundPool()  {
+        // With Android API >= 21.
+        if (Build.VERSION.SDK_INT >= 21 ) {
+            AudioAttributes audioAttrib = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build();
+            SoundPool.Builder builder= new SoundPool.Builder();
+            builder.setAudioAttributes(audioAttrib).setMaxStreams(MAX_STREAMS);
+            this.soundPool = builder.build();
+        }
+        // With Android API < 21
+        else {
+            // SoundPool(int maxStreams, int streamType, int srcQuality)
+            this.soundPool = new SoundPool(MAX_STREAMS, AudioManager.STREAM_MUSIC, 0);
+        }
+        // When SoundPool load complete.
+        this.soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                soundPoolLoaded = true;
+            }
+        });
+        // Load the sound explosion.wav into SoundPool
+        soundIdExplosion = soundPool.load(this.getContext(), R.raw.explosion,1);
+        soundIdBounce = soundPool.load(this.getContext(), R.raw.bounce,1);
+    }
+    public void playSoundExplosion()  {
+        if(soundPoolLoaded) {
+            float leftVolumn = 0.8f;
+            float rightVolumn =  0.8f;
+            // Play sound explosion.wav
+            int streamId = this.soundPool.play(this.soundIdExplosion,leftVolumn, rightVolumn, 1, 0, 1f);
+        }
+    }
+
+    public void playSoundBounce()  {
+        if(soundPoolLoaded) {
+            float leftVolumn = 0.8f;
+            float rightVolumn =  0.8f;
+            // Play sound bounce.wav
+            int streamId = this.soundPool.play(this.soundIdBounce,leftVolumn, rightVolumn, 1, 0, 1f);
+        }
+    }
+
 }

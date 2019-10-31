@@ -16,7 +16,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             canvas.setAllParams();
-            canvas.gameOver = false;
             canvas.setOnClickListener(null);
             canvas.setOnTouchListener(respond);
 
